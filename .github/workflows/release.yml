@@ -1,0 +1,49 @@
+name: Build Binary
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Create Release
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install Arduino CLI
+        uses: arduino/setup-arduino-cli@v1.1.1
+        with:
+          version: 0.10.0
+
+      - name: Install STM libs
+        run: |
+          arduino-cli config init --additional-urls https://dl.espressif.com/dl/package_esp32_index.json,https://arduino.esp8266.com/stable/package_esp8266com_index.json,https://raw.githubusercontent.com/damellis/attiny/ide-1.6.x-boards-manager/package_damellis_attiny_index.json
+          arduino-cli config dump
+          arduino-cli core update-index
+          arduino-cli core install esp32:esp32
+          arduino-cli lib install M5Core2
+      - name: Get the version
+        id: version
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+        run: |
+          echo ::set-output name=version::${GITHUB_REF/refs\/tags\//}
+      - name: Build Bin
+        run: |
+          mkdir -p builds/
+          pwd
+          ls -la
+          arduino-cli compile --fqbn esp32:esp32:m5stack-core2 --verbose --output builds/
+          mkdir -p dist/
+          cp builds/owlcms4-ref-m5stack-core2.ino.bin "dist/owlcms4-ref0-m5stack-core2-${GITHUB_SHA}.bin"
+      - name: Archive binaries
+        uses: actions/upload-artifact@v1
+        with:
+          name: bin
+          path: dist/
+      - name: Release stable binaries
+        uses: softprops/action-gh-release@v1
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            dist/*.bin
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

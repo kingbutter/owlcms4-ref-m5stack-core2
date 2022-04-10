@@ -31,7 +31,7 @@ jobs:
           mkdir -p builds/
           pwd
           ls -la
-          arduino-cli compile --fqbn esp32:esp32:m5stack-core2 --verbose --output builds/
+          arduino-cli compile --fqbn esp32:esp32:m5stack-core2 --verbose --output builds/owlcms4-ref-m5stack-core2.ino.bin
           mkdir -p dist/
           cp builds/owlcms4-ref-m5stack-core2.ino.bin "dist/owlcms4-ref0-m5stack-core2-${GITHUB_SHA}.bin"
       - name: Archive binaries
